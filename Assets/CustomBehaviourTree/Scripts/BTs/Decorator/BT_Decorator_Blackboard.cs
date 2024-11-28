@@ -24,12 +24,6 @@ public class BT_Decorator_Blackboard : BT_Decorator
         return _child.RunNode();
     }
 
-    // protected override void NodeExit()
-    // {
-    //     base.NodeExit();
-    // }
-
-
     void BlackboardEvt(string condition, object result)
     {
         NodeAbort();

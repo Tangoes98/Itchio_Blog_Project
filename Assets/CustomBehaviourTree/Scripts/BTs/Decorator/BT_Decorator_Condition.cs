@@ -34,8 +34,6 @@ public class BT_Decorator_Condition : BT_Decorator
 
     void BlackboardEvt(string key, object value)
     {
-        // if (!_blackboard.GetData(condition, out result))
-        //     return;
 
         //* Update Deco condition
         if (key == _conditionKey && value is bool)
@@ -48,3 +46,6 @@ public class BT_Decorator_Condition : BT_Decorator
         NodeAbort();
     }
 }
+
+// if (!_blackboard.GetData(condition, out result))
+//     return;

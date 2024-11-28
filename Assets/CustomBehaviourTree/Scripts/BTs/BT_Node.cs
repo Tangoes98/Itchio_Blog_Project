@@ -36,7 +36,7 @@ public abstract class BT_Node
         return updateResult;
     }
 
-    protected NodeState _abortState = NodeState.Running;
+    public NodeState _abortState = NodeState.Running;
     protected virtual NodeState NodeEnter()
         => NodeState.Running;
     protected virtual NodeState NodeTick()

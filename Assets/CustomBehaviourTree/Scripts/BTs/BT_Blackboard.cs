@@ -5,10 +5,8 @@ using UnityEngine;
 
 public class BT_Blackboard
 {
-
     Dictionary<string, object> _blackboardData = new();
     public event Action<string, object> OnBlackboardValueChange;
-
 
     public void SetData(string key, object value)
     {

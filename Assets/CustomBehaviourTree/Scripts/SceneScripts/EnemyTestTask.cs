@@ -15,10 +15,9 @@ public class EnemyTestTask : BT_Node
         _taskLog = taskLog;
     }
 
-
     protected override NodeState NodeEnter()
     {
-        //Debug.Log($"{_taskName}: {_taskLog}");
+        //Debug.Log($"Enter task {_taskLog}");
         return NodeState.Running;
     }
 
@@ -33,7 +32,6 @@ public class EnemyTestTask : BT_Node
 
     protected override void NodeExit()
     {
-        //Debug.Log($"{_taskName} is Exit");
         _timer.ResetTimer();
         base.NodeExit();
     }

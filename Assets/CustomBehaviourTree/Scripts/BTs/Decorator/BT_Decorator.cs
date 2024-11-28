@@ -11,15 +11,13 @@ public class BT_Decorator : BT_Node
     }
 
     protected override NodeState NodeEnter()
-    {
-        return _abortState;
-    }
+        => _abortState;
 
     public override void NodeAbort()
     {
         _child.NodeAbort();
-        //base.NodeAbort();
         _abortState = NodeState.Failure;
     }
-
 }
+
+//base.NodeAbort();
