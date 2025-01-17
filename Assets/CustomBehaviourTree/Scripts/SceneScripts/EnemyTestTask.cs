@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEditor.Experimental.GraphView;
 using UnityEngine;
 
-public class EnemyTestTask : BT_Node
+public class EnemyTestTask : BT_Task
 {
     Timer _timer;
     string _taskName;
@@ -33,7 +33,6 @@ public class EnemyTestTask : BT_Node
     protected override void NodeExit()
     {
         _timer.ResetTimer();
-        base.NodeExit();
     }
 
 }

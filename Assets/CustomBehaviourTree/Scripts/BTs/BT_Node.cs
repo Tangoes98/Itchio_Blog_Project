@@ -12,43 +12,47 @@ public enum NodeState
 
 public abstract class BT_Node
 {
-    bool firstTimeExecute = true;
+    bool _firstTimeExecute = true;
     public NodeState RunNode()
     {
         //todo: Function to execute node once
-        if (firstTimeExecute)
+        if (_firstTimeExecute)
         {
-            firstTimeExecute = false;
+            _firstTimeExecute = false;
             NodeState executeResult = NodeEnter();
-            if (executeResult == NodeState.Success || executeResult == NodeState.Failure)
+            if (executeResult == NodeState.Success
+                || executeResult == NodeState.Failure)
             {
-                EndNode();
+                NodeEnd();
                 return executeResult;
             }
         }
 
         //todo: Function to update node each frame
         NodeState updateResult = NodeTick();
-        if (updateResult == NodeState.Success || updateResult == NodeState.Failure)
-        {
-            EndNode();
-        }
+        if (updateResult == NodeState.Success
+            || updateResult == NodeState.Failure)
+            NodeEnd();
         return updateResult;
     }
 
-    public NodeState _abortState = NodeState.Running;
     protected virtual NodeState NodeEnter()
         => NodeState.Running;
     protected virtual NodeState NodeTick()
         => NodeState.Running;
     protected virtual void NodeExit()
-        => _abortState = NodeState.Running;
-    public virtual void NodeAbort()
-        => EndNode();
+        => AbortState = NodeState.Running;
 
-    void EndNode()
+
+    public NodeState AbortState;
+    public virtual void NodeAbort()
+        => NodeEnd();
+
+    void NodeEnd()
     {
-        firstTimeExecute = true;
         NodeExit();
+        _firstTimeExecute = true;
     }
+
+    public string CurrentActiveNode;
 }

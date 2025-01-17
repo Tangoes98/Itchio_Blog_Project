@@ -29,6 +29,7 @@ public class BT_CompositeNode : BT_Node
             return NodeState.Failure;
 
         _currentChildNode = _childNodes.First;
-        return _abortState;
+        return AbortState;
     }
+
 }

@@ -19,8 +19,12 @@ public class BT_Sequencer : BT_CompositeNode
 
     public override void NodeAbort()
     {
+        //*Abort Child
         CurrentChildNode().NodeAbort();
+        
+        //*Abort Self
         base.NodeAbort();
-        _abortState = NodeState.Failure;
+        AbortState = NodeState.Failure;
+
     }
 }

@@ -11,13 +11,13 @@ public class EnemyBT : BT_BehaviourTree
     {
         _enemyBlackboard = new();
         BT_Selector rootNode = new();
-        EnemyTestTask attackPlayer = new(3f, "EenmyAttackTask", "AttackPlayer");
+        EnemyTestTask attackPlayer = new(2f, "EenmyAttackTask", "AttackPlayer");
         BT_Decorator_Condition conditionDecorator = new(attackPlayer, () => IsPlayerInsight, _enemyBlackboard, "IsPlayerInsight");
 
         BT_Sequencer petrolSeq = new();
-        EnemyTestTask patrolToA = new(3f, "PatrolToA", "PatrolA");
-        EnemyTestTask patrolToB = new(3f, "PatrolToB", "PatrolB");
-        EnemyTestTask patrolToC = new(3f, "PatrolToC", "PatrolC");
+        EnemyTestTask patrolToA = new(1.6f, "PatrolToA", "PatrolA");
+        EnemyTestTask patrolToB = new(1.6f, "PatrolToB", "PatrolB");
+        EnemyTestTask patrolToC = new(1.6f, "PatrolToC", "PatrolC");
         BT_Decorator_Blackboard blackboardDecorator = new(petrolSeq, _enemyBlackboard);
 
 
