@@ -32,6 +32,7 @@ public class EnemyTestTask : BT_Task
 
     protected override void NodeExit()
     {
+        base.NodeExit();
         _timer.ResetTimer();
     }
 
