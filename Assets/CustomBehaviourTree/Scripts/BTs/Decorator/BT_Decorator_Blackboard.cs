@@ -26,6 +26,10 @@ public class BT_Decorator_Blackboard : BT_Decorator
 
     void BlackboardEvt(string condition, object result)
     {
-        NodeAbort();
+        //* Modify custom BB events here
+
+        //* Example:
+        if (condition == "IsPlayerInsight" && (bool)result)
+            NodeAbort();
     }
 }

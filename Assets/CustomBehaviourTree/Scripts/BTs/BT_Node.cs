@@ -48,6 +48,7 @@ public abstract class BT_Node
     public virtual void NodeAbort()
         => NodeEnd();
 
+
     void NodeEnd()
     {
         NodeExit();
