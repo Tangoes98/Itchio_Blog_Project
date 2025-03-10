@@ -8,21 +8,16 @@ namespace DialogueSystem.Editor
 {
     public class DialogueEditor : EditorWindow
     {
+        So_Dialogue _selectedDialogue;
+
+
+        #region Window
+
         //* To popup a Dialogue Editor window in Unity Editor
-        [MenuItem("Window/Dialogue Editor")]
+        [MenuItem("Window/Dialogue Editor/Dialogue Editor", false, 100)]
         public static void ShowWindow()
         {
             GetWindow<DialogueEditor>("Dialogue Editor");
-        }
-
-        private void OnGUI()
-        {
-            GUILayout.Label("Dialogue Editor", EditorStyles.boldLabel);
-
-            if (GUILayout.Button("Create New Dialogue"))
-            {
-                Debug.Log("Creating new dialogue");
-            }
         }
 
         //* To open a Dialogue Editor window when a Dialogue asset is double clicked
@@ -36,13 +31,55 @@ namespace DialogueSystem.Editor
                 Debug.Log("Opening dialogue: " + dialogueSo.name);
                 return true;
             }
-            // if (Selection.activeObject.GetType() == typeof(So_Dialogue))
-            // {
-            //     So_Dialogue dialogue = Selection.activeObject as So_Dialogue;
-            //     Debug.Log("Opening dialogue: " + dialogue.name);
-            //     return true;
-            // }
             return false;
         }
+
+        #endregion
+
+        #region GUI
+        void OnEnable()
+        {
+            Selection.selectionChanged += OnSelectionChanged;
+        }
+
+        void OnSelectionChanged()
+        {
+            var currentDialogue = Selection.activeObject as So_Dialogue;
+            if (currentDialogue != null)
+            {
+                _selectedDialogue = currentDialogue;
+                Repaint();
+            }
+        }
+
+        void OnGUI()
+        {
+            if (_selectedDialogue == null)
+            {
+                EditorGUILayout.LabelField("No Dialogue Selected");
+                return;
+            }
+            else
+            {
+                foreach (var item in _selectedDialogue.GetNodes())
+                {
+                    EditorGUI.BeginChangeCheck();
+                    //EditorGUILayout.LabelField(item.Text, EditorStyles.boldLabel);
+                    string newText = EditorGUILayout.TextField(item.Text);
+                    if (EditorGUI.EndChangeCheck())
+                    {
+                        Undo.RecordObject(_selectedDialogue, "Dialogue Text Change");
+                        item.Text = newText;
+                        //EditorUtility.SetDirty(_selectedDialogue);
+                    }
+
+
+
+                }
+            }
+
+        }
+
+        #endregion
     }
 }
