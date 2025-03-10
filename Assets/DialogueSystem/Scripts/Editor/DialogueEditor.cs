@@ -9,7 +9,7 @@ namespace DialogueSystem.Editor
     public class DialogueEditor : EditorWindow
     {
         So_Dialogue _selectedDialogue;
-
+        GUIStyle _nodeStyle;
 
         #region Window
 
@@ -40,6 +40,12 @@ namespace DialogueSystem.Editor
         void OnEnable()
         {
             Selection.selectionChanged += OnSelectionChanged;
+
+            _nodeStyle = new();
+            _nodeStyle.normal.background = EditorGUIUtility.Load("node0") as Texture2D;
+            _nodeStyle.normal.textColor = Color.white;
+            _nodeStyle.padding = new(10, 10, 10, 10);
+            _nodeStyle.border = new(12, 12, 12, 12);
         }
 
         void OnSelectionChanged()
@@ -63,21 +69,29 @@ namespace DialogueSystem.Editor
             {
                 foreach (var item in _selectedDialogue.GetNodes())
                 {
-                    EditorGUI.BeginChangeCheck();
-                    //EditorGUILayout.LabelField(item.Text, EditorStyles.boldLabel);
-                    string newText = EditorGUILayout.TextField(item.Text);
-                    if (EditorGUI.EndChangeCheck())
-                    {
-                        Undo.RecordObject(_selectedDialogue, "Dialogue Text Change");
-                        item.Text = newText;
-                        //EditorUtility.SetDirty(_selectedDialogue);
-                    }
-
-
+                    OnGUINode(item);
 
                 }
             }
 
+        }
+
+        private void OnGUINode(DialogueNode item)
+        {
+            GUILayout.BeginArea(item.NodePosition, _nodeStyle);
+            EditorGUI.BeginChangeCheck();
+
+
+            EditorGUILayout.LabelField("Node", EditorStyles.boldLabel);
+            string newText = EditorGUILayout.TextField(item.Text);
+            if (EditorGUI.EndChangeCheck())
+            {
+                Undo.RecordObject(_selectedDialogue, "Dialogue Text Change");
+                item.Text = newText;
+                //EditorUtility.SetDirty(_selectedDialogue);
+            }
+
+            GUILayout.EndArea();
         }
 
         #endregion
