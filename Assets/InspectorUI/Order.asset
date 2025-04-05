@@ -1,0 +1,63 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a499775e619465348893a81c35087196, type: 3}
+  m_Name: Order
+  m_EditorClassIdentifier: 
+  TipRate: 0.15
+  Orders:
+  - ItemName: BeefKofta
+    Price: 32
+    Orderers: 06000000
+  - ItemName: OreoMilkShake
+    Price: 12
+    Orderers: 03000000
+  - ItemName: IcedCoffee
+    Price: 11
+    Orderers: 03000000
+  - ItemName: ChickenKofta
+    Price: 24
+    Orderers: 05000000
+  - ItemName: Pepsi
+    Price: 20
+    Orderers: 05000000060000000200000001000000
+  - ItemName: RicePuddingNuts
+    Price: 12.5
+    Orderers: 04000000
+  - ItemName: Konafa
+    Price: 16
+    Orderers: 0400000002000000030000000500000006000000
+  - ItemName: RicePuddingPlain
+    Price: 10.5
+    Orderers: 02000000
+  - ItemName: PeachHose
+    Price: 28
+    Orderers: 03000000040000000500000006000000
+  - ItemName: OrangeMintHose
+    Price: 28
+    Orderers: 03000000040000000500000006000000
+  - ItemName: 7up
+    Price: 5
+    Orderers: 00000000
+  - ItemName: HawawshiClassic
+    Price: 23
+    Orderers: 000000000100000002000000
+  - ItemName: MincedBeefPizza
+    Price: 23
+    Orderers: 01000000
+  - ItemName: MixedGrill
+    Price: 34
+    Orderers: 010000000000000002000000
+  - ItemName: EgyptianKofta
+    Price: 26
+    Orderers: 03000000
+  TotalPrice: 305
+  OutPrices: []

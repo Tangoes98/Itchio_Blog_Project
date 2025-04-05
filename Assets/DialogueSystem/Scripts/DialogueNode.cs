@@ -12,6 +12,6 @@ namespace DialogueSystem
         public string ID;
         public string Text;
         public string[] Children;
-        public Rect NodePosition;
+        public Rect Rect = new(0, 0, 100, 100);
     }
 }

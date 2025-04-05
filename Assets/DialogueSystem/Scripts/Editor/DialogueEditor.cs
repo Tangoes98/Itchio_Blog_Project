@@ -1,5 +1,7 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
+//using System.Diagnostics;
 using UnityEditor;
 using UnityEditor.Callbacks;
 using UnityEngine;
@@ -10,6 +12,9 @@ namespace DialogueSystem.Editor
     {
         So_Dialogue _selectedDialogue;
         GUIStyle _nodeStyle;
+        DialogueNode _draggedNode;
+        Vector2 _draggedNodeOffset;
+
 
         #region Window
 
@@ -67,32 +72,104 @@ namespace DialogueSystem.Editor
             }
             else
             {
-                foreach (var item in _selectedDialogue.GetNodes())
+                ProcessEvents(Event.current);
+                foreach (var item in _selectedDialogue.GetAllNodes())
                 {
-                    OnGUINode(item);
-
+                    DrawNode(item);
+                    DrawConnections(item);
                 }
             }
 
         }
 
-        private void OnGUINode(DialogueNode item)
+        void ProcessEvents(Event curEvt)
         {
-            GUILayout.BeginArea(item.NodePosition, _nodeStyle);
+            if (curEvt.type == EventType.MouseDown && _draggedNode == null)
+            {
+                //* Start to drag
+                _draggedNode = GetNodeAtPoint(curEvt.mousePosition);
+                if (_draggedNode != null)
+                    _draggedNodeOffset = curEvt.mousePosition - _draggedNode.Rect.position;
+            }
+            else if (curEvt.type == EventType.MouseDrag && _draggedNode != null)
+            {
+                //* Dragging
+                Undo.RecordObject(_selectedDialogue, "Dialogue Node Drag");
+                _draggedNode.Rect.position = curEvt.mousePosition - _draggedNodeOffset;
+                GUI.changed = true;
+            }
+            else if (curEvt.type == EventType.MouseUp && _draggedNode != null)
+            {
+                //* Stop dragging
+                _draggedNode = null;
+            }
+        }
+
+        void DrawNode(DialogueNode node)
+        {
+            GUILayout.BeginArea(node.Rect, _nodeStyle);
             EditorGUI.BeginChangeCheck();
 
 
-            EditorGUILayout.LabelField("Node", EditorStyles.boldLabel);
-            string newText = EditorGUILayout.TextField(item.Text);
+            EditorGUILayout.LabelField("NodeID: " + node.ID, EditorStyles.boldLabel);
+            string newText = EditorGUILayout.TextField(node.Text);
+
             if (EditorGUI.EndChangeCheck())
             {
                 Undo.RecordObject(_selectedDialogue, "Dialogue Text Change");
-                item.Text = newText;
+                node.Text = newText;
                 //EditorUtility.SetDirty(_selectedDialogue);
+            }
+
+            if (GUILayout.Button("Add Child"))
+            {
+                Undo.RecordObject(_selectedDialogue, "Add Dialogue Node");
+                // node.Children.Add(Guid.NewGuid().ToString());
+                // EditorUtility.SetDirty(_selectedDialogue);
+            }
+
+
+            EditorGUILayout.LabelField("Child:", EditorStyles.boldLabel);
+            foreach (var item in _selectedDialogue.GetAllChildNodes(node))
+            {
+                EditorGUILayout.LabelField(item.Text);
             }
 
             GUILayout.EndArea();
         }
+
+
+        private DialogueNode GetNodeAtPoint(Vector2 mousePosition)
+        {
+            DialogueNode expectNode = null;
+            foreach (var item in _selectedDialogue.GetAllNodes())
+            {
+                if (!item.Rect.Contains(mousePosition))
+                    continue;
+                else
+                    expectNode = item;
+            }
+
+            return expectNode;
+        }
+        private void DrawConnections(DialogueNode node)
+        {
+            Vector3 startPos = new(node.Rect.xMax, node.Rect.center.y);
+            foreach (var childNode in _selectedDialogue.GetAllChildNodes(node))
+            {
+                //Vector3 startPos = node.Rect.center;
+                Vector3 endPos = new(childNode.Rect.xMin, childNode.Rect.center.y);
+                Vector3 offset = endPos - startPos;
+                offset.y = 0;
+                offset.x *= 0.5f;
+
+                Handles.DrawBezier(
+                    startPos, endPos,
+                    startPos + offset, endPos - offset,
+                    Color.white, null, 4f);
+            }
+        }
+
 
         #endregion
     }

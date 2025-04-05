@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.VisualScripting;
 using UnityEngine;
 using UnityEngine.Audio;
 
@@ -17,32 +18,49 @@ public class AudioMgr : MonoBehaviour
         }
         else
             Destroy(gameObject);
-    }
 
+
+        SetupAudioSourceDic(_audioSourceDatas, _audioSourceDataDic);
+        SetupAudioClipDic(_audioClips, _audioClipDic);
+        InitGroupVolume();
+        SFX_Init();
+
+    }
+    #region Variables
+
+
+    [Header("Mixer")]
     [SerializeField] AudioMixer _audioMixer;
     public AudioMixer AudioMixer => _audioMixer;
 
-
-    [SerializeField] List<AudioSourceData> _audioSources = new(); //Wasted
-    [SerializeField] List<AudioSourceData> _audioSourceDatas = new();
+    [Header("AudioData")]
     [SerializeField] List<AudioClipData> _audioClips = new();
 
-    Dictionary<string, AudioSourceData> _audioSourceDataDic = new();
-    Dictionary<string, AudioClipData> _audioClipDic = new();
 
+    [Header("SfxData")]
+    [SerializeField] List<BatchedAudioClipData> _sfxClipDatas = new();
+
+    [Header("Volume")]
     [SerializeField] float _masterVol;
     [SerializeField] float _musicVol;
     [SerializeField] float _sfxVol;
-    [SerializeField] float _genMscVol1;
+    [SerializeField] float _ambient;
+    [SerializeField] public float InitMasterVol = 0.7f;
+    [SerializeField] public float InitVol = 1f;
     [SerializeField] bool _isFading;
 
+    [Header("AudioSourceData")]
+    [SerializeField] List<AudioSourceData> _audioSourceDatas = new();
+    Dictionary<string, AudioSourceData> _audioSourceDataDic = new();
+    Dictionary<string, AudioClipData> _audioClipDic = new();
+
+
+
+
+    #endregion
     #region Public Method
 
-    /// <summary>
-    /// Input volume between 0-1, can be run at Update()
-    /// </summary>
-    /// <param name="volumeType"></param>
-    /// <param name="volume"></param>
+    #region Volume
     public void SetVolume(VolumeType volumeType, float volume)
     {
         float vol = ConvertNormVolume(volume);
@@ -57,37 +75,14 @@ public class AudioMgr : MonoBehaviour
             case VolumeType.Sfx:
                 _sfxVol = vol;
                 break;
+            case VolumeType.Ambient:
+                _ambient = vol;
+                break;
         }
     }
-
-    /// <summary>
-    /// Target volume between 0-1, run once
-    /// </summary>
-    /// <param name="group"></param>
-    /// <param name="targetVol"></param>
-    /// <param name="duration"></param>
-    public void AudioFade(SourceGroupType group, float targetVol, float duration)
-    {
-        StartCoroutine(AudioFadeCoroutine(group.ToString(), targetVol, duration));
-    }
-
-
-    public void PlayAudio(SourceGroupType group, float targetVol, float fadeDuration, bool isLoop)
-    {
-        GetGroupSource(group).loop = isLoop;
-        GetGroupSource(group).Play();
-
-        //*Fade in the music clip through mixer
-        AudioFade(group, targetVol, fadeDuration);
-    }
-
-    public void StopAudio(SourceGroupType group)
-        => GetGroupSource(group).Stop();
-
-    public void PauseAudio(SourceGroupType group)
-        => GetGroupSource(group).Pause();
-
-    public void LoadAudioCLip(string clipName, SourceGroupType group)
+    #endregion
+    #region Load Audio
+    public void LoadAudioClip(string clipName, SourceGroupType group)
     {
         AudioClipData clipData;
         AudioSource source = GetGroupSource(group);
@@ -99,44 +94,105 @@ public class AudioMgr : MonoBehaviour
         //*Get source and play the clip
         clipData = _audioClipDic[clipName];
         source.clip = clipData.AudiCilp;
+
+        SetSourceChannelGroupVolume(group, 0f);
+
+        //* Play in start volume
+        PlayAudio(group, true);
     }
+
+    public void PlayAudio(SourceGroupType group, bool isLoop)
+    {
+        GetGroupSource(group).loop = isLoop;
+        GetGroupSource(group).Play();
+    }
+
+    #endregion
+    #region Fade
+    public void AudioFade(SourceGroupType group, float targetVol, float duration)
+    {
+        //StopAllCoroutines();
+        // currentCor = 
+        StartCoroutine(AudioFadeCoroutine(group.ToString(), targetVol, duration));
+    }
+    #endregion
+
+    #region Music
+
+    public void PlayAudio(SourceGroupType group, float targetVol, float fadeDuration, bool isLoop)
+    {
+        GetGroupSource(group).loop = isLoop;
+        GetGroupSource(group).Play();
+
+        //*Fade in the music clip through mixer
+        //AudioFade(group, targetVol, fadeDuration);
+    }
+
+
+    public void StopAudio(SourceGroupType group)
+        => GetGroupSource(group).Stop();
+
+    public void PauseAudio(SourceGroupType group)
+        => GetGroupSource(group).Pause();
+
+    #endregion
+
+
+
 
     #region SFX
-
-    public void PlaySfx(SourceGroupType group)
-        => GetGroupSource(group).Play();
-    public void PlaySfx(SourceGroupType group, float volume)
+    void SFX_Init()
     {
-        SetSourceChannelGroupVolume(group, volume);
-        GetGroupSource(group).Play();
+        _sfxClipDatas.ForEach(item => item.InitRandom());
     }
-    public void PlaySfx(string clipName, SourceGroupType group, float volume)
+    void LoadSfxClip(AudioClip clip, SourceGroupType group)
     {
-        LoadAudioCLip(clipName, group);
-        SetSourceChannelGroupVolume(group, volume);
-        GetGroupSource(group).Play();
+        AudioSource source = GetGroupSource(group);
+        source.clip = clip;
     }
 
+    public void PlayRandomSfx(string sfxTypeName, SourceGroupType group)
+    {
+        var sfxData = GetSfxData(_sfxClipDatas, sfxTypeName);
+        int randomClipIndex = sfxData.RandomValClass.GetNonDuplicatedRandomValue();
+        LoadSfxClip(sfxData.AudiCilps[randomClipIndex], group);
+        SetSourceChannelGroupVolume(group, sfxData.ClipVolume);
+        GetGroupSource(group).Play();
+    }
+    public void PlaySfx(string sfxTypeName, SourceGroupType group, int sfxClipIndex)
+    {
+        var sfxData = GetSfxData(_sfxClipDatas, sfxTypeName);
+        var clip = sfxData.AudiCilps[sfxClipIndex];
+        LoadSfxClip(clip, group);
+        SetSourceChannelGroupVolume(group, sfxData.ClipVolume);
+        GetGroupSource(group).Play();
+    }
+    public void StopSfx(SourceGroupType group)
+    {
+        GetGroupSource(group).Stop();
+    }
+    public void SetSfxLoop(SourceGroupType group, bool isloop)
+        => GetGroupSource(group).loop = isloop;
+
+    BatchedAudioClipData GetSfxData(List<BatchedAudioClipData> batchData, string sfxName)
+    {
+        return batchData.Where(item => item.BatchDataName == sfxName).ToArray()[0];
+    }
 
     #endregion
 
 
-
-
-
     #endregion
+    //* (x=1, y=0), (x=0, y=-80)
     float ConvertNormVolume(float normVolume)
-    {
-        return normVolume * 80f - 80f;
-    }
+        => normVolume * 80f - 80f;
+
     float ConvertGroupVolume(float groupVolume)
-    {
-        return (groupVolume + 80f) / 80f;
-    }
+        => (groupVolume + 80f) / 80f;
+
     AudioSource GetGroupSource(SourceGroupType group)
-    {
-        return _audioSourceDataDic[group.ToString()].AudiSource;
-    }
+        => _audioSourceDataDic[group.ToString()].AudiSource;
+
 
     #region Dic Setup
     void SetupAudioClipDic(List<AudioClipData> dataList, Dictionary<string, AudioClipData> dic)
@@ -159,7 +215,7 @@ public class AudioMgr : MonoBehaviour
 
     void SetupAudioSourceDataList(List<AudioSourceData> dataList)
     {
-        AudioSource[] sources = this.GetComponentsInChildren<AudioSource>();
+        AudioSource[] sources = GenerateAudioSource();
         SourceGroupType[] channelTypes = (SourceGroupType[])Enum.GetValues(typeof(SourceGroupType));
         AudioSourceData[] sourceDataCount = new AudioSourceData[channelTypes.Length];
 
@@ -168,10 +224,24 @@ public class AudioMgr : MonoBehaviour
         for (int i = 0; i < dataList.Count; i++)
         {
             var tempSourceData = dataList[i];
+            tempSourceData.DataName = channelTypes[i].ToString();
             tempSourceData.AudiSource = sources[i];
             tempSourceData.SourceType = channelTypes[i];
             dataList[i] = tempSourceData;
         }
+    }
+
+    AudioSource[] GenerateAudioSource()
+    {
+        var groups = (SourceGroupType[])Enum.GetValues(typeof(SourceGroupType));
+        GameObject child = new GameObject();
+        child.name = "AudioSource";
+        child.transform.parent = this.transform;
+        for (int i = 0; i < groups.Length; i++)
+        {
+            child.AddComponent<AudioSource>();
+        }
+        return child.GetComponents<AudioSource>();
     }
 
     #endregion
@@ -206,7 +276,7 @@ public class AudioMgr : MonoBehaviour
         _audioMixer.GetFloat(channelType.ToString(), out outVolume);
         return ConvertGroupVolume(outVolume);
     }
-    void SetSourceChannelGroupVolume(SourceGroupType channelType, float normVolume)
+    public void SetSourceChannelGroupVolume(SourceGroupType channelType, float normVolume)
     {
         _audioMixer.SetFloat(channelType.ToString(), ConvertNormVolume(normVolume));
     }
@@ -226,14 +296,19 @@ public class AudioMgr : MonoBehaviour
 
     private void Start()
     {
+
         _audioMixer.GetFloat("MasterVol", out _masterVol);
         _audioMixer.GetFloat("MusicVol", out _musicVol);
         _audioMixer.GetFloat("SfxVol", out _sfxVol);
+        _audioMixer.GetFloat("Ambient", out _ambient);
 
-        SetupAudioSourceDic(_audioSourceDatas, _audioSourceDataDic);
-        SetupAudioClipDic(_audioClips, _audioClipDic);
+        //* Initialize Volume
+        SetVolume(VolumeType.Master, InitMasterVol);
+        SetVolume(VolumeType.Sfx, InitVol);
+        SetVolume(VolumeType.Music, InitVol);
+        SetVolume(VolumeType.Ambient, InitVol);
 
-        InitGroupVolume();
+        
 
     }
 
@@ -242,37 +317,7 @@ public class AudioMgr : MonoBehaviour
         _audioMixer.SetFloat("MasterVol", _masterVol);
         _audioMixer.SetFloat("MusicVol", _musicVol);
         _audioMixer.SetFloat("SfxVol", _sfxVol);
-
-
-        //_audioMixer.SetFloat("GenMscVol1", _genMscVol1);
-
-
-        //! Debug
-
-        if (DebugInput(KeyCode.Space))
-        {
-            // LoadAudioCLip("BGM1", SourceGroupType.GenMusic1);
-        }
-        if (DebugInput(KeyCode.C))
-        {
-            //PlayAudio(SourceGroupType.GenMusic1, 1f, 0f);
-        }
-        if (DebugInput(KeyCode.V))
-        {
-            StopAudio(SourceGroupType.GenMusic1);
-        }
-        if (DebugInput(KeyCode.B))
-        {
-            PauseAudio(SourceGroupType.GenMusic1);
-        }
-        if (DebugInput(KeyCode.N))
-        {
-            LoadAudioCLip("BGM2", SourceGroupType.GenMusic1);
-        }
-
-
-
-
+        _audioMixer.SetFloat("Ambient", _ambient);
 
 
     }
@@ -280,22 +325,19 @@ public class AudioMgr : MonoBehaviour
     #endregion
 
 
-    bool DebugInput(KeyCode keyCode)
-    => Input.GetKeyDown(keyCode);
-
-
-
-
 }
 
+#region DataType
 
 public enum VolumeType
 {
-    Master, Music, Sfx
+    Master, Music, Sfx, Ambient
 }
+
+//* AudioSource on each child object should match the number of SourceGroupType
 public enum SourceGroupType
 {
-    Sfx1, Sfx2, Sfx3, Sfx4,
+    Sfx1, Sfx2, Sfx3, Sfx4, Sfx5,
     GenMusic1, GenMusic2,
     GenVertical, Vertical1, Vertical2, Vertical3, Vertical4, Vertical5
 }
@@ -308,11 +350,144 @@ public struct AudioClipData
 }
 
 [Serializable]
+public class BatchedAudioClipData
+{
+    public string BatchDataName;
+    public float ClipVolume;
+    public AudioClip[] AudiCilps;
+    public Ad_RandomValue RandomValClass;
+    public void InitRandom()
+        => RandomValClass = new(AudiCilps.Length);
+}
+
+[Serializable]
 public struct AudioSourceData
 {
-    public string Name;
+    public string DataName;
     public SourceGroupType SourceType;
     public AudioSource AudiSource;
 }
 
 
+
+#endregion
+
+
+
+#region Audio Fade
+
+public class AudioFade
+{
+    AudioMixer _audioMixer;
+    public AudioFade(AudioMixer mixer)
+    {
+        _audioMixer = mixer;
+    }
+
+    public IEnumerator AudioFadeCoroutine(SourceGroupType group, float targetVol, float duration)
+    {
+        string audioStr = group.ToString();
+        float elipsedTime = 0f;
+        _audioMixer.GetFloat(audioStr, out float currentVol);
+        float groupVol = ConvertNormVolume(targetVol);
+
+        while (elipsedTime < duration)
+        {
+            elipsedTime += Time.deltaTime;
+            _audioMixer.SetFloat(audioStr, Mathf.Lerp(currentVol, groupVol, elipsedTime / duration));
+            yield return null;
+        }
+        _audioMixer.SetFloat(audioStr, groupVol);
+    }
+    float ConvertNormVolume(float normVolume)
+    => normVolume * 80f - 80f;
+}
+#endregion
+
+
+
+
+
+
+
+
+
+
+#region Tool
+
+
+
+
+
+
+
+#region Random Val
+public class Ad_RandomValue
+{
+    int _min, _max;
+    List<int> _usedValues = new();
+    public Ad_RandomValue(int minInclude, int maxExclude)
+    {
+        _min = minInclude;
+        _max = maxExclude;
+    }
+    public Ad_RandomValue(int listCount)
+    {
+        _min = 0;
+        _max = listCount;
+    }
+
+    public int GetRandomValue()
+      => UnityEngine.Random.Range(_min, _max);
+
+    public int GetNonDuplicatedRandomValue()
+    {
+        if (_max == 0)
+            return 0;
+
+        int value = UnityEngine.Random.Range(_min, _max);
+        //* Check if all values are used
+        UsedValueCheck();
+        while (_usedValues.Contains(value))
+        {
+            value = UnityEngine.Random.Range(_min, _max);
+        }
+
+        _usedValues.Add(value);
+        return value;
+    }
+    void UsedValueCheck()
+    {
+        if (_usedValues.Count != _max - _min)
+            return;
+
+        var lastVal = _usedValues.Last();
+        ResetUsedValues();
+        _usedValues.Add(lastVal);
+    }
+    public void ResetUsedValues() => _usedValues.Clear();
+}
+
+#region Audio Config
+
+[Serializable]
+public struct Ad_AudioFXConfig
+{
+    public string AudioFX_Name;
+    public bool IsLoop;
+    [TextArea(2, 4)] public string Description;
+    [Header("InGame")]
+    public float TargetVolume;
+    public float MaxVolume;
+    public float MinVolume;
+    public float FadeInDurtion;
+    public float FadeOutDuration;
+
+}
+
+
+
+
+#endregion
+#endregion
+#endregion
